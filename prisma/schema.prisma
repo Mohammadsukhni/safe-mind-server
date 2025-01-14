@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id           Int       @id @default(autoincrement())
+  first_name   String
+  last_name    String
+  email        String
+  phone_number String?
+  password     String
+  dob          DateTime?
+
+  reset_password Boolean? @default(false)
+
+  is_deleted Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+
+  account_type account_type
+  admins       Admin[]
+  tokens       token[]
+  User         User[]
+  Doctor       Doctor[]
+
+  @@unique([email])
+  @@unique([phone_number])
+}
+
+model User {
+  id           Int           @unique @default(autoincrement())
+  account      Account?      @relation(fields: [account_id], references: [id])
+  account_id   Int           @id
+  appointments Appointment[]
+}
+
+model Admin {
+  id         Int      @default(autoincrement())
+  account    Account? @relation(fields: [account_id], references: [id])
+  account_id Int      @id
+}
+
+model Doctor {
+  id             Int              @unique @default(autoincrement())
+  account        Account?         @relation(fields: [account_id], references: [id])
+  account_id     Int              @id
+  appointments   Appointment[]
+  doctor_profile doctor_profile[]
+}
+
+model doctor_profile {
+  id               Int               @id @unique @default(autoincrement())
+  experience_years Int?
+  bio              String?
+  qualifications   String?
+  languages        doctor_languages?
+
+  is_deleted Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+
+  doctor    Doctor @relation(fields: [doctor_id], references: [id])
+  doctor_id Int
+}
+
+model Appointment {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  title       String
+  description String?
+  price       String
+  is_booked   Boolean  @default(false)
+
+  is_deleted Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+
+  doctor    Doctor @relation(fields: [doctor_id], references: [id])
+  doctor_id Int
+
+  patient User? @relation(fields: [user_id], references: [id])
+  user_id Int?
+}
+
+model token {
+  id          Int      @id @default(autoincrement())
+  token_data  String?
+  expiry_date DateTime
+
+  is_deleted Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+
+  account          Account    @relation(fields: [account_id], references: [id])
+  account_id       Int
+  related_token_id Int?
+  related_token    token?     @relation("token", fields: [related_token_id], references: [id])
+  token_type       token_type
+
+  tokens token[] @relation("token")
+}
+
+model contact_us {
+  id           Int             @id @default(autoincrement())
+  email        String
+  phone_number String?
+  message      String
+  type         contact_us_type
+
+  is_deleted Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+}
+
+enum token_type {
+  access
+  refresh
+  otp
+}
+
+enum account_type {
+  admin
+  user
+  doctor
+}
+
+enum doctor_languages {
+  english
+  arabic
+  french
+  spanish
+  german
+  italian
+  turkish
+}
+
+enum contact_us_type {
+  general
+  medical
+  support
+  technical
+}
