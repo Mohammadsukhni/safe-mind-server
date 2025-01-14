@@ -22,6 +22,14 @@ export class UserService {
     refresh_token: string;
   }> {
     try {
+      const existingAccount = await this.prisma.account.findUnique({
+        where: { email: createAccountDto.email },
+      });
+
+      if (existingAccount) {
+        throw new BadRequestException('Email already exists');
+      }
+
       const hashedPassword = await bcrypt.hash(createAccountDto.password, 10);
 
       const createdAccount = await this.prisma.account.create({
